@@ -15,15 +15,33 @@
 <body>
 
     <!-- ================= Sidebar ================= -->
-    <nav id="sidebar">
+    <nav id="sidebar" >
         <h4 class="mb-4">🌱 AgriManager</h4>
+        {% if current_user %}
+        <div class="user-card">
+            <div class="avatar">
+             <span>  {{ current_user.name[0]|upper }}</span>
+            </div>
+        
+            <div class="user-info">
+                <div class="name">{{ current_user.name }}</div>
+                <div class="email" title="{{ current_user.email }}">
+                    {{ current_user.email }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
-        <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('crop_dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('crops') }}">Crops</a>
-        <a href="{{ url_for('expenses') }}">Expenses</a>
-        <a href="{{ url_for('income') }}">Income</a>
-        <a href="{{ url_for('reports') }}">Reports</a>
+        <hr>
+
+   
+        <a href="{{ url_for('home') }}" >Home</a>
+        <a href="{{ url_for('crop_dashboard') }}" >Dashboard</a>
+        <a href="{{ url_for('crops') }}" >Crops</a>
+        <a href="{{ url_for('expenses') }}" >Expenses</a>
+        <a href="{{ url_for('income') }}" >Income</a>
+        <a href="{{ url_for('reports') }}" >Reports</a>
+   
 
         <hr>
         <a class="text-danger" href="{{ url_for('logout') }}">Logout</a>

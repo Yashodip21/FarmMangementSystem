@@ -70,6 +70,11 @@ class Income(db.Model):
 
 # -------------------- AUTH --------------------
 
+def get_current_user():
+    if "user" in session:
+        return User.query.get(session["user"])
+    return None
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     # if "user" not in session:
@@ -109,7 +114,8 @@ def logout():
 
 @app.route("/home")
 def home():
-    return render_template("home.html")
+    
+    return render_template("home.html",current_user=get_current_user() )
 
 @app.route("/crop_dashboard")
 def crop_dashboard():
@@ -161,7 +167,8 @@ def crop_dashboard():
         total_income=total_income,
         total_expense=total_expense,
         profit=profit,
-        crop_chart_data=crop_chart_data
+        crop_chart_data=crop_chart_data,
+         current_user=get_current_user()
     )
 
 @app.route("/crops", methods=["GET", "POST"])
@@ -172,7 +179,8 @@ def crops():
             area=request.form["area"],
             season=request.form["season"],
             planted_date=request.form["planted_date"],
-            user_id=session["user"]  
+            user_id=session["user"] ,
+            
         )
         db.session.add(crop)
         db.session.commit()
@@ -184,7 +192,9 @@ def crops():
     .order_by(Crop.id.desc()) \
     .all()
 
-    return render_template("crops.html",crops=all_crops)
+     
+    return render_template("crops.html",crops=all_crops,current_user=get_current_user() )
+    
 
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
@@ -205,7 +215,8 @@ def expenses():
             amount=request.form["amount"],
             date=request.form["date"],
             crop_id=crop_id,
-            user_id=session["user"]  
+            user_id=session["user"],
+           
         )
 
         db.session.add(expense)
@@ -218,7 +229,7 @@ def expenses():
     .order_by(Expense.id.desc()) \
     .all()
 
-    return render_template("expenses.html", crops=crops, expenses=all_expenses)
+    return render_template("expenses.html", crops=crops, expenses=all_expenses,current_user=get_current_user() )
 
 @app.route("/income", methods=["GET", "POST"])
 def income():
@@ -237,7 +248,8 @@ def income():
             total_amount=total,
             details=request.form["details"],
             date=request.form["date"],
-            user_id=session["user"]  
+            user_id=session["user"],
+           
         )
         db.session.add(income)
         db.session.commit()
@@ -255,12 +267,13 @@ def income():
         "income.html",
         crops=crops,
         incomes=incomes,
-        total_income=total_income
+        total_income=total_income,
+        current_user=get_current_user() 
     )
 
 @app.route("/reports")
 def reports():
-    return render_template("reports.html")
+    return render_template("reports.html",current_user=get_current_user() )
 
 # -------------------- RUN --------------------
 
