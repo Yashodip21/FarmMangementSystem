@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">Dashboard</h2>
+
+<!-- ===================== Stats Cards ===================== -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card bg-success">
+            <h5>Total Crops</h5>
+            <h2>{{ crops|length }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card bg-primary">
+            <h5>Total Income</h5>
+            <h2>₹ {{ total_income or 0 }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card bg-danger">
+            <h5>Total Expense</h5>
+            <h2>₹ {{ total_expense or 0 }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card bg-dark">
+            <h5>Profit</h5>
+            <h2>₹ {{ profit or 0 }}</h2>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Crop Details Table ===================== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Crop Details</h5>
+            </div>
+
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Crop Name</th>
+                            <th>Season</th>
+                            <th>Area (Acre)</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in crops %}
+                        <tr>
+                            <td>{{ c.crop_name }}</td>
+                            <td>{{ c.season }}</td>
+                            <td>{{ c.area }}</td>
+                            <td>{{ c.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Crop Financial Performance ===================== -->
+<div class="row mt-5">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white text-center">
+                <h5 class="mb-0">Crop Financial Performance</h5>
+                <small class="text-muted">Income vs Expense Overview</small>
+            </div>
+
+            <div class="card-body">
+                <canvas id="cropChart" height="320"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Chart JS ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const cropData = {{ crop_chart_data | default ([]) | tojson }};
+
+    const labels = cropData.map(c => c.name);
+    const incomeData = cropData.map(c => c.income);
+    const expenseData = cropData.map(c => c.expense);
+
+    const canvas = document.getElementById('cropChart');
+
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        backgroundColor: '#28a745'
+                    },
+                    {
+                        label: 'Expense',
+                        data: expenseData,
+                        backgroundColor: '#dc3545'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'logarithmic',
+                        beginAtZero: true
+                    },
+                    x: {
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.6
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+{% endblock %}
