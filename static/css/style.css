@@ -1,0 +1,201 @@
+body { background:#f4f6f9; }
+
+.wrapper { display:flex; }
+
+#sidebar {
+    width:220px;
+    background:#1b5e20;
+    color:white;
+    min-height:100vh;
+    padding:15px;
+}
+
+#sidebar a {
+    color:white;
+    display:block;
+    margin:10px 0;
+    text-decoration:none;
+}
+
+.content { padding:20px; width:100%; }
+
+.auth {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card {
+    padding:30px;
+    width:350px;
+}
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: #1f2937;
+    color: white;
+    padding: 20px;
+    position: fixed;
+}
+
+.sidebar .logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px;
+    color: #d1d5db;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.sidebar a:hover {
+    background: #374151;
+    color: white;
+}
+
+.sidebar .logout {
+    margin-top: 30px;
+    background: #dc2626;
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 260px;
+    padding: 30px;
+}
+
+/* Stats Cards */
+.stat-card {
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.card {
+    border-radius: 14px;
+}
+
+.badge {
+    font-size: 0.85rem;
+}
+
+/* Fix sidebar */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    /* adjust if your sidebar is wider */
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Push page content to the right */
+.content {
+    margin-left: 240px;
+    /* same as sidebar width */
+}
+
+/* Prevent horizontal scroll */
+body {
+    overflow-x: hidden;
+}
+/* ================= USER PROFILE BOX ================= */
+
+.user-box,
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #ecfdf5;
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+/* ================= AVATAR (PERFECTLY CENTERED) ================= */
+
+.avatar,
+.user-avatar {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ffffff;
+
+    /* 🔥 CRITICAL FIX */
+    display: grid;
+    place-items: center;
+
+    font-size: 22px;
+    font-weight: 800;
+    text-transform: uppercase;
+
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    box-shadow: 0 6px 14px rgba(22, 163, 74, 0.35);
+}
+
+/* 🔥 Optical font correction (VERY IMPORTANT) */
+.avatar span,
+.user-avatar span {
+    display: block;
+    transform: translateY(1px);
+}
+
+/* ================= USER INFO ================= */
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-info strong,
+.user-info .name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #064e3b;
+}
+
+.user-info small,
+.user-info .email {
+    font-size: 13px;
+    color: #047857;
+    opacity: 0.9;
+}
+/* ================= USER EMAIL FIX ================= */
+
+.user-info {
+    min-width: 0;
+    /* 🔥 REQUIRED for ellipsis to work in flex */
+}
+
+.user-info .email {
+    max-width: 160px;
+    /* adjust if needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    display: block;
+    font-size: 13px;
+    color: #047857;
+    opacity: 0.9;
+}
+

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Expenses</h3>
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal">
+        + Add Expense
+    </button>
+</div>
+
+<!-- EXPENSE TABLE -->
+<table class="table table-hover bg-white shadow-sm">
+    <thead class="table-light">
+        <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Crop</th>
+            <th>Description</th>
+            <th>Amount (₹)</th>
+            <th>Created_At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in expenses %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.category }}</td>
+            <td>{{ e.expense_type }}</td>
+            <td>{{ e.crop.crop_name if e.crop else "General" }}</td>
+            <td>{{ e.description }}</td>
+            <td class="text-danger fw-bold">₹{{ e.amount }}</td>
+            <td>{{e.created_at}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- MODAL -->
+<div class="modal fade" id="expenseModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content p-3">
+
+            <div class="modal-header">
+                <h5>Add New Expense</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form method="POST">
+                <div class="modal-body">
+
+                    <!-- Expense Type -->
+                    <label class="form-label">Expense Type</label>
+                    <select class="form-select mb-3" name="expense_type" id="expenseType" required>
+                        <option value="general">General Farm Expense</option>
+                        <option value="crop">Individual Crop Expense</option>
+                    </select>
+
+                    <!-- Crop -->
+                    <label class="form-label">Related Crop</label>
+                    <select class="form-select mb-3" name="crop_id" id="cropSelect">
+                        <option value="">-- Select Crop --</option>
+                        {% for c in crops %}
+                        <option value="{{ c.id }}">{{ c.crop_name }} ({{ c.season }})</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Category -->
+                    <label class="form-label">Category</label>
+                    <select class="form-select mb-3" name="category" required>
+                        <option>Seed</option>
+                        <option>Pesticides</option>
+                        <option>Fertilizer</option>
+                        <option>Labor</option>
+                        <option>Machinery</option>
+                        <option>Harvesting</option>
+                        <option>Other</option>
+                    </select>
+
+                    <!-- Amount -->
+                    <label class="form-label">Amount (₹)</label>
+                    <input type="number" step="0.01" class="form-control mb-3" name="amount" required>
+
+                    <!-- Description -->
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control mb-3" name="description"></textarea>
+
+                    <!-- Date -->
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="date" required>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-danger w-100">Log Expense</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("expenseType").addEventListener("change", function () {
+    document.getElementById("cropSelect").disabled = this.value === "general";
+});
+</script>
+
+{% endblock %}

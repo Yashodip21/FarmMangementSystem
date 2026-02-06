@@ -1,0 +1,66 @@
+ {% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold">Reports</h3>
+        <p class="text-muted mb-0">Analyze profitability per crop.</p>
+    </div>
+
+    <a href="{{ url_for('download_report_pdf') }}" class="btn btn-outline-dark">
+        ⬇ Export PDF
+    </a>
+</div>
+
+<table class="table table-hover shadow-sm bg-white rounded">
+    <thead class="table-light">
+        <tr>
+            <th>Crop Name</th>
+            <th class="text-danger">Total Expense</th>
+            <th class="text-success">Total Income</th>
+            <th class="text-center">Net Profit / Loss</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for r in report_data %}
+        <tr>
+            <td class="fw-bold">{{ r.crop_name }}</td>
+
+            <td class="text-danger">
+                ₹{{ "%.2f"|format(r.expense) }}
+            </td>
+
+            <td class="text-success">
+                ₹{{ "%.2f"|format(r.income) }}
+            </td>
+
+            <td class="fw-bold text-center">
+                {% if r.profit >= 0 %}
+                <span class="text-success">↗ ₹{{ "%.2f"|format(r.profit) }}</span>
+                {% else %}
+                <span class="text-danger">↘ ₹{{ "%.2f"|format(r.profit) }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+    <tfoot class="table-success fw-bold">
+        <tr>
+            <td>TOTAL</td>
+            <td class="text-danger">₹{{ "%.2f"|format(total_expense) }}</td>
+            <td class="text-success">₹{{ "%.2f"|format(total_income) }}</td>
+
+            <td class="text-center">
+                {% if net_profit >= 0 %}
+                <span class="text-success">₹{{ "%.2f"|format(net_profit) }}</span>
+                {% else %}
+                <span class="text-danger">₹{{ "%.2f"|format(net_profit) }}</span>
+                {% endif %}
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+{% endblock %}
