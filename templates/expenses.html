@@ -2,41 +2,122 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>Expenses</h3>
+    <div>
+        <h3><i class="fas fa-wallet text-danger me-2"></i>Expenses</h3>
+        <p class="text-muted mb-0">Track all your farm spending.</p>
+    </div>
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal">
-        + Add Expense
+        <i class="fas fa-plus me-1"></i> Add Expense
     </button>
 </div>
 
 <!-- EXPENSE TABLE -->
-<table class="table table-hover bg-white shadow-sm">
-    <thead class="table-light">
-        <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th>Type</th>
-            <th>Crop</th>
-            <th>Description</th>
-            <th>Amount (₹)</th>
-            <th>Created_At</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in expenses %}
-        <tr>
-            <td>{{ e.date }}</td>
-            <td>{{ e.category }}</td>
-            <td>{{ e.expense_type }}</td>
-            <td>{{ e.crop.crop_name if e.crop else "General" }}</td>
-            <td>{{ e.description }}</td>
-            <td class="text-danger fw-bold">₹{{ e.amount }}</td>
-            <td>{{e.created_at}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% if expenses %}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Crop</th>
+                    <th>Description</th>
+                    <th>Amount (₹)</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td>{{ e.date|format_date }}</td>
+                    <td><span class="badge bg-secondary">{{ e.category }}</span></td>
+                    <td>{{ e.expense_type }}</td>
+                    <td>{{ e.crop.crop_name if e.crop else "General" }}</td>
+                    <td>{{ e.description or '—' }}</td>
+                    <td class="text-danger fw-bold">₹{{ e.amount }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
+                            data-bs-target="#editExpense{{ e.id }}" title="Edit">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <a class="btn btn-sm btn-outline-danger" href="{{ url_for('delete_expense', id=e.id) }}"
+                            onclick="return confirm('Delete this expense?')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
 
-<!-- MODAL -->
+                <!-- EDIT EXPENSE MODAL -->
+                <div class="modal fade" id="editExpense{{ e.id }}">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content p-3">
+                            <div class="modal-header">
+                                <h5>Edit Expense</h5>
+                                <button class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST" action="{{ url_for('edit_expense', id=e.id) }}">
+                                <div class="modal-body">
+                                    <label class="form-label">Expense Type</label>
+                                    <select class="form-select mb-3" name="expense_type" required>
+                                        <option value="general" {% if e.expense_type=='general' %}selected{% endif %}>
+                                            General Farm Expense</option>
+                                        <option value="crop" {% if e.expense_type=='crop' %}selected{% endif %}>
+                                            Individual Crop Expense</option>
+                                    </select>
+
+                                    <label class="form-label">Related Crop</label>
+                                    <select class="form-select mb-3" name="crop_id">
+                                        <option value="">-- Select Crop --</option>
+                                        {% for c in crops %}
+                                        <option value="{{ c.id }}" {% if e.crop_id==c.id %}selected{% endif %}>{{
+                                            c.crop_name }} ({{ c.season }})</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <label class="form-label">Category</label>
+                                    <select class="form-select mb-3" name="category" required>
+                                        {% for cat in ['Seed', 'Pesticides', 'Fertilizer', 'Labor', 'Machinery',
+                                        'Harvesting', 'Other'] %}
+                                        <option {% if e.category==cat %}selected{% endif %}>{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <label class="form-label">Amount (₹)</label>
+                                    <input type="number" step="0.01" class="form-control mb-3" name="amount"
+                                        value="{{ e.amount }}" required>
+
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control mb-3"
+                                        name="description">{{ e.description }}</textarea>
+
+                                    <label class="form-label">Date</label>
+                                    <input type="date" class="form-control" name="date" value="{{ e.date }}" required>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-danger w-100">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-receipt d-block"></i>
+    <h5>No expenses recorded yet</h5>
+    <p>Start tracking your farm spending to understand your costs better.</p>
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal">
+        <i class="fas fa-plus me-1"></i> Log Your First Expense
+    </button>
+</div>
+{% endif %}
+
+<!-- ADD EXPENSE MODAL -->
 <div class="modal fade" id="expenseModal">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content p-3">
@@ -101,9 +182,9 @@
 </div>
 
 <script>
-document.getElementById("expenseType").addEventListener("change", function () {
-    document.getElementById("cropSelect").disabled = this.value === "general";
-});
+    document.getElementById("expenseType").addEventListener("change", function () {
+        document.getElementById("cropSelect").disabled = this.value === "general";
+    });
 </script>
 
 {% endblock %}

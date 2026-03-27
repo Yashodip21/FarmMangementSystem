@@ -1,5 +1,149 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Home</h2>
-<p>Welcome to Farm Management System</p>
+
+<!-- ===================== Welcome Banner ===================== -->
+<div class="welcome-banner">
+    <h2><i class="fas fa-sun me-2"></i>Welcome back, {{ current_user.name }}!</h2>
+    <p>Here's a quick overview of your farm today.</p>
+</div>
+
+<!-- ===================== Stats Cards ===================== -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-success">
+            <h5><i class="fas fa-seedling me-1"></i> Total Crops</h5>
+            <h2>{{ total_crops }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-primary">
+            <h5><i class="fas fa-arrow-up me-1"></i> Total Income</h5>
+            <h2>₹{{ total_income }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-danger">
+            <h5><i class="fas fa-arrow-down me-1"></i> Total Expense</h5>
+            <h2>₹{{ total_expense }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: {% if profit >= 0 %}#064e3b{% else %}#7f1d1d{% endif %}">
+            <h5><i class="fas fa-chart-pie me-1"></i> Net Profit</h5>
+            <h2>₹{{ profit }}</h2>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Quick Actions ===================== -->
+<h5 class="fw-bold mb-3"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h5>
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('crops') }}" class="quick-action-btn">
+            <i class="fas fa-seedling" style="background: #16a34a;"></i>
+            <span>Add Crop</span>
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('expenses') }}" class="quick-action-btn">
+            <i class="fas fa-wallet" style="background: #dc2626;"></i>
+            <span>Log Expense</span>
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('income') }}" class="quick-action-btn">
+            <i class="fas fa-indian-rupee-sign" style="background: #2563eb;"></i>
+            <span>Record Income</span>
+        </a>
+    </div>
+    <div class="col-md-3 mb-3">
+        <a href="{{ url_for('reports') }}" class="quick-action-btn">
+            <i class="fas fa-file-lines" style="background: #7c3aed;"></i>
+            <span>View Reports</span>
+        </a>
+    </div>
+</div>
+
+<!-- ===================== Recent Activity ===================== -->
+<div class="row">
+
+    <!-- Recent Expenses -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-wallet text-danger me-2"></i>Recent Expenses</h6>
+                <a href="{{ url_for('expenses') }}" class="text-decoration-none small">View All →</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_expenses %}
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in recent_expenses %}
+                        <tr>
+                            <td>{{ e.date }}</td>
+                            <td>{{ e.category }}</td>
+                            <td class="text-end text-danger fw-bold">₹{{ e.amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state py-4">
+                    <i class="fas fa-receipt d-block"></i>
+                    <p class="mb-0">No expenses recorded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Income -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-indian-rupee-sign text-success me-2"></i>Recent Income</h6>
+                <a href="{{ url_for('income') }}" class="text-decoration-none small">View All →</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_incomes %}
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Details</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in recent_incomes %}
+                        <tr>
+                            <td>{{ i.date }}</td>
+                            <td>{{ i.details or 'N/A' }}</td>
+                            <td class="text-end text-success fw-bold">₹{{ i.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state py-4">
+                    <i class="fas fa-coins d-block"></i>
+                    <p class="mb-0">No income recorded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

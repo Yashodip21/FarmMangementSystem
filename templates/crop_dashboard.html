@@ -1,64 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="mb-4">Dashboard</h2>
+<h2 class="mb-4"><i class="fas fa-chart-line text-primary me-2"></i>Dashboard</h2>
 
 <!-- ===================== Stats Cards ===================== -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-3">
         <div class="stat-card bg-success">
-            <h5>Total Crops</h5>
+            <h5><i class="fas fa-seedling me-1"></i> Total Crops</h5>
             <h2>{{ crops|length }}</h2>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-3">
         <div class="stat-card bg-primary">
-            <h5>Total Income</h5>
-            <h2>₹ {{ total_income or 0 }}</h2>
+            <h5><i class="fas fa-arrow-up me-1"></i> Total Income</h5>
+            <h2>₹{{ total_income or 0 }}</h2>
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-3 col-6 mb-3">
         <div class="stat-card bg-danger">
-            <h5>Total Expense</h5>
-            <h2>₹ {{ total_expense or 0 }}</h2>
+            <h5><i class="fas fa-arrow-down me-1"></i> Total Expense</h5>
+            <h2>₹{{ total_expense or 0 }}</h2>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="stat-card bg-dark">
-            <h5>Profit</h5>
-            <h2>₹ {{ profit or 0 }}</h2>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="stat-card" style="background: {% if profit >= 0 %}#064e3b{% else %}#7f1d1d{% endif %}">
+            <h5><i class="fas fa-chart-pie me-1"></i> Net Profit</h5>
+            <h2>₹{{ profit or 0 }}</h2>
         </div>
     </div>
 </div>
 
 <!-- ===================== Crop Details Table ===================== -->
+{% if crops %}
 <div class="row mt-4">
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
-                <h5 class="mb-0">Crop Details</h5>
+                <h5 class="mb-0"><i class="fas fa-table me-2 text-muted"></i>Crop Details</h5>
             </div>
 
-            <div class="card-body">
-                <table class="table table-striped">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
                     <thead>
                         <tr>
                             <th>Crop Name</th>
                             <th>Season</th>
                             <th>Area (Acre)</th>
-                            <th>Created At</th>
+                            <th>Planted</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for c in crops %}
                         <tr>
-                            <td>{{ c.crop_name }}</td>
-                            <td>{{ c.season }}</td>
+                            <td class="fw-bold">{{ c.crop_name }}</td>
+                            <td><span class="badge bg-success">{{ c.season }}</span></td>
                             <td>{{ c.area }}</td>
-                            <td>{{ c.created_at }}</td>
+                            <td>{{ c.planted_date|format_date }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -67,28 +68,31 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- ===================== Crop Financial Performance ===================== -->
-<div class="row mt-5">
-    <div class="col-lg-8 col-md-10 mx-auto">
+{% if crop_chart_data %}
+<div class="row mt-4">
+    <div class="col-lg-7 col-md-10">
         <div class="card shadow-sm">
-            <div class="card-header bg-white text-center">
-                <h5 class="mb-0">Crop Financial Performance</h5>
-                <small class="text-muted">Income vs Expense Overview</small>
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-muted"></i>Crop Financial Performance</h5>
+                <small class="text-muted">Income vs Expense per crop</small>
             </div>
 
             <div class="card-body">
-                <canvas id="cropChart" height="320"></canvas>
+                <canvas id="cropChart" style="max-height: 300px;"></canvas>
             </div>
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- ===================== Chart JS ===================== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    const cropData = {{ crop_chart_data | default ([]) | tojson  | safe  }};
+    const cropData = {{ crop_chart_data | default ([]) | tojson | safe }};
 
     const labels = cropData.map(c => c.name);
     const incomeData = cropData.map(c => c.income);
@@ -107,17 +111,20 @@
                     {
                         label: 'Income',
                         data: incomeData,
-                        backgroundColor: '#28a745'
+                        backgroundColor: '#22c55e',
+                        borderRadius: 4
                     },
                     {
                         label: 'Expense',
                         data: expenseData,
-                        backgroundColor: '#dc3545'
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
                     }
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
                         position: 'top'
@@ -125,12 +132,15 @@
                 },
                 scales: {
                     y: {
-                        type: 'logarithmic',
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
                     },
                     x: {
-                        barPercentage: 0.6,
-                        categoryPercentage: 0.6
+                        grid: { display: false }
                     }
                 }
             }

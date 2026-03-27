@@ -1,9 +1,14 @@
 import os
+from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except ImportError:
+    XHTML2PDF_AVAILABLE = False
 from io import BytesIO
 from sqlalchemy import func
 
@@ -67,6 +72,8 @@ class Income(db.Model):
     details = db.Column(db.String(200))
     date = db.Column(db.String(20))
 
+    crop = db.relationship("Crop", backref="incomes")
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -74,6 +81,15 @@ class Income(db.Model):
 
 
 # -------------------- AUTH --------------------
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user" not in session:
+            flash("Please login first.", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_current_user():
     if "user" in session:
@@ -118,11 +134,44 @@ def logout():
 # -------------------- PAGES --------------------
 
 @app.route("/home")
+@login_required
 def home():
-    
-    return render_template("home.html",current_user=get_current_user() )
+    user_id = session["user"]
+    user = get_current_user()
+
+    # Summary stats
+    total_crops = Crop.query.filter_by(user_id=user_id).count()
+
+    total_income = db.session.query(
+        db.func.sum(Income.total_amount)
+    ).filter(Income.user_id == user_id).scalar() or 0
+
+    total_expense = db.session.query(
+        db.func.sum(Expense.amount)
+    ).filter(Expense.user_id == user_id).scalar() or 0
+
+    profit = total_income - total_expense
+
+    # Recent activity (last 5 each)
+    recent_expenses = Expense.query.filter_by(user_id=user_id)\
+        .order_by(Expense.id.desc()).limit(5).all()
+
+    recent_incomes = Income.query.filter_by(user_id=user_id)\
+        .order_by(Income.id.desc()).limit(5).all()
+
+    return render_template(
+        "home.html",
+        current_user=user,
+        total_crops=total_crops,
+        total_income=round(total_income, 2),
+        total_expense=round(total_expense, 2),
+        profit=round(profit, 2),
+        recent_expenses=recent_expenses,
+        recent_incomes=recent_incomes
+    )
 
 @app.route("/crop_dashboard")
+@login_required
 def crop_dashboard():
     crops = Crop.query.filter_by(user_id=session["user"]).all()
 
@@ -163,7 +212,7 @@ def crop_dashboard():
             "expense": crop_expense
         })
 
-        print(crop_chart_data)
+
 
 
     return render_template(
@@ -177,6 +226,7 @@ def crop_dashboard():
     )
 
 @app.route("/crops", methods=["GET", "POST"])
+@login_required
 def crops():
     if request.method == "POST":
         crop = Crop(
@@ -202,6 +252,7 @@ def crops():
     
 
 @app.route("/expenses", methods=["GET", "POST"])
+@login_required
 def expenses():
     crops = Crop.query.filter_by(user_id=session["user"]).all()
 
@@ -237,9 +288,9 @@ def expenses():
     return render_template("expenses.html", crops=crops, expenses=all_expenses,current_user=get_current_user() )
 
 @app.route("/income", methods=["GET", "POST"])
+@login_required
 def income():
     crops = Crop.query.filter_by(user_id=session["user"]).all()
-
 
     if request.method == "POST":
         quantity = float(request.form["quantity"])
@@ -247,14 +298,13 @@ def income():
         total = quantity * price
 
         income = Income(
-            crop_id=request.form.get("crop_id"),
+            crop_id=request.form.get("crop_id") or None,
             quantity=quantity,
             price_per_unit=price,
             total_amount=total,
             details=request.form["details"],
             date=request.form["date"],
             user_id=session["user"],
-           
         )
         db.session.add(income)
         db.session.commit()
@@ -273,11 +323,123 @@ def income():
         crops=crops,
         incomes=incomes,
         total_income=total_income,
-        current_user=get_current_user() 
+        current_user=get_current_user()
     )
 
-#-------------------------- REPORTS VIEW --------------------------
+# -------------------- EDIT / DELETE ROUTES --------------------
+
+# --- CROPS ---
+@app.route("/crops/edit/<int:id>", methods=["POST"])
+@login_required
+def edit_crop(id):
+    crop = Crop.query.get_or_404(id)
+    if crop.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("crops"))
+
+    crop.crop_name = request.form["crop_name"]
+    crop.area = request.form["area"]
+    crop.season = request.form["season"]
+    crop.planted_date = request.form["planted_date"]
+    db.session.commit()
+    flash("Crop updated successfully", "success")
+    return redirect(url_for("crops"))
+
+@app.route("/crops/delete/<int:id>")
+@login_required
+def delete_crop(id):
+    crop = Crop.query.get_or_404(id)
+    if crop.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("crops"))
+
+    db.session.delete(crop)
+    db.session.commit()
+    flash("Crop deleted", "success")
+    return redirect(url_for("crops"))
+
+# --- EXPENSES ---
+@app.route("/expenses/edit/<int:id>", methods=["POST"])
+@login_required
+def edit_expense(id):
+    expense = Expense.query.get_or_404(id)
+    if expense.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("expenses"))
+
+    expense.expense_type = request.form["expense_type"]
+    expense.category = request.form["category"]
+    expense.description = request.form["description"]
+    expense.amount = request.form["amount"]
+    expense.date = request.form["date"]
+    crop_id = request.form.get("crop_id")
+    expense.crop_id = crop_id if expense.expense_type == "crop" else None
+    db.session.commit()
+    flash("Expense updated", "success")
+    return redirect(url_for("expenses"))
+
+@app.route("/expenses/delete/<int:id>")
+@login_required
+def delete_expense(id):
+    expense = Expense.query.get_or_404(id)
+    if expense.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("expenses"))
+
+    db.session.delete(expense)
+    db.session.commit()
+    flash("Expense deleted", "success")
+    return redirect(url_for("expenses"))
+
+# --- INCOME ---
+@app.route("/income/edit/<int:id>", methods=["POST"])
+@login_required
+def edit_income(id):
+    inc = Income.query.get_or_404(id)
+    if inc.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("income"))
+
+    inc.crop_id = request.form.get("crop_id") or None
+    inc.quantity = float(request.form["quantity"])
+    inc.price_per_unit = float(request.form["price"])
+    inc.total_amount = inc.quantity * inc.price_per_unit
+    inc.details = request.form["details"]
+    inc.date = request.form["date"]
+    db.session.commit()
+    flash("Income updated", "success")
+    return redirect(url_for("income"))
+
+@app.route("/income/delete/<int:id>")
+@login_required
+def delete_income(id):
+    inc = Income.query.get_or_404(id)
+    if inc.user_id != session["user"]:
+        flash("Unauthorized", "danger")
+        return redirect(url_for("income"))
+
+    db.session.delete(inc)
+    db.session.commit()
+    flash("Income deleted", "success")
+    return redirect(url_for("income"))
+
+# -------------------- JINJA FILTERS --------------------
+
+@app.template_filter("format_date")
+def format_date(value):
+    """Convert date string or datetime to readable format like '15 Mar 2024'"""
+    if not value:
+        return "—"
+    if isinstance(value, str):
+        try:
+            value = datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            return value
+    return value.strftime("%d %b %Y")
+
+
 @app.route("/reports")
+@login_required
 def reports():
     user_id = session.get("user")
 
@@ -330,6 +492,7 @@ def reports():
 #---------------------- REPORTS API -------------------
 
 @app.route("/api/reports")
+@login_required
 def reports_api():
     user_id = session.get("user")
 
@@ -369,12 +532,18 @@ def reports_api():
 
 
 
-#-------------------- REPORT PDF DOWNLOAD --------------------
+#-----------+++-------- REPORT PDF DOWNLOAD --------------------
 
 @app.route("/reports/pdf")
+@login_required
 def download_report_pdf():
-    user_id = session.get("user")
+    if not XHTML2PDF_AVAILABLE:
+        flash("PDF export requires xhtml2pdf. Install it with: pip install xhtml2pdf", "warning")
+        return redirect(url_for("reports"))
 
+    user_id = session.get("user")
+     
+    user = User.query.get(user_id) 
     crops = Crop.query.filter_by(user_id=user_id).all()
     report_data = []
 
@@ -409,6 +578,7 @@ def download_report_pdf():
 
     html = render_template(
         "reports_pdf.html",
+        user=user,
         report_data=report_data,
         total_expense=round(total_expense, 2),
         total_income=round(total_income, 2),

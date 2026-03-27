@@ -50,6 +50,13 @@
         }
     </style>
 </head>
+<div class="user-section">
+    <strong>Farmer Name:</strong> {{ user.name }}<br>
+    <strong>Email:</strong> {{ user.email }}<br>
+    <strong>Generated On:</strong> {{ datetime.utcnow().strftime('%d %b %Y') }}
+</div>
+
+<hr>
 
 <body>
 
